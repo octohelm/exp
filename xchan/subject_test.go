@@ -1,12 +1,12 @@
 package xchan
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"sync"
 	"testing"
 
-	"github.com/octohelm/exp/xiter"
 	testingx "github.com/octohelm/x/testing"
 )
 
@@ -48,12 +48,8 @@ func TestSubject(t *testing.T) {
 }
 
 func runObserve(id int, ob Observer[int], recv chan<- string) {
-	defer func() {
-		ob.CancelCause(nil)
-	}()
-
 	count := 0
-	for x := range xiter.Recv(ob.Value()) {
+	for x := range Observe(context.Background(), ob) {
 		recv <- fmt.Sprintf("%d-%d", id, x)
 		count++
 		if count > id {
