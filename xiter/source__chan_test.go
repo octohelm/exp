@@ -29,5 +29,4 @@ func TestChan(t *testing.T) {
 	testingx.Expect(t, values, testingx.Equal([]int{
 		1, 2, 3,
 	}))
-
 }

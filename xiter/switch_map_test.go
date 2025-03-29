@@ -1,11 +1,12 @@
 package xiter
 
 import (
-	testingx "github.com/octohelm/x/testing"
 	"iter"
 	"slices"
 	"testing"
 	"time"
+
+	testingx "github.com/octohelm/x/testing"
 )
 
 func TestSwitchMap(t *testing.T) {

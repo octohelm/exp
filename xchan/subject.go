@@ -38,7 +38,7 @@ func (s *Subject[T]) Send(value T) {
 
 func (s *Subject[T]) observer() iter.Seq[Observer[T]] {
 	return func(yield func(Observer[T]) bool) {
-		for k, _ := range s.observers.Range {
+		for k := range s.observers.Range {
 			if !yield(k.(Observer[T])) {
 				return
 			}
