@@ -1,59 +1,79 @@
 package xchan
 
 import (
-	"context"
 	"fmt"
+	"math/rand"
 	"slices"
 	"sync"
 	"testing"
+	"time"
 
 	testingx "github.com/octohelm/x/testing"
 )
 
-func TestSubject(t *testing.T) {
-	s := &Subject[int]{}
+func FuzzSubject(f *testing.F) {
+	// f.Add(2, 2)
 
-	chRet := make(chan string)
-
-	wg := &sync.WaitGroup{}
-	for i := range 3 {
-		ob := s.Observe()
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			runObserve(i+1, ob, chRet)
-		}()
+	for range 10 {
+		f.Add(rand.Intn(1000), rand.Intn(100))
 	}
 
-	go func() {
-		for i := range 10 {
-			s.Send(i)
-		}
+	f.Fuzz(func(t *testing.T, n int, workerNumber int) {
+		t.Run(fmt.Sprintf("worker %d with %d values", workerNumber, n), func(t *testing.T) {
+			ret := &Subject[int]{}
+			src := &Subject[int]{}
 
-		wg.Wait()
-		s.CancelCause(nil)
-		close(chRet)
-	}()
+			wg := &WaitGroup{}
+			for range workerNumber {
+				wg.Go(func() {
+					count := 0
 
-	results := make([]string, 0)
-	for ret := range chRet {
-		results = append(results, ret)
-	}
-	slices.Sort(results)
-	testingx.Expect(t, len(results), testingx.Be(2+3+4))
+					for x := range Observe(t.Context(), src.Observe()) {
+						count++
 
-	fmt.Println(results)
+						ret.Send(x)
+
+						if count >= n {
+							return
+						}
+					}
+				})
+			}
+
+			wg.Go(func() {
+				// defer send
+				time.Sleep(time.Duration(n) * time.Millisecond)
+
+				for i := range n {
+					src.Send(i)
+				}
+			})
+
+			go func() {
+				wg.Wait()
+
+				ret.CancelCause(nil)
+			}()
+
+			values := slices.Collect(
+				Observe(t.Context(), ret.Observe()),
+			)
+
+			testingx.Expect(t, len(values), testingx.Be(n*workerNumber))
+		})
+	})
 }
 
-func runObserve(id int, ob Observer[int], recv chan<- string) {
-	count := 0
-	for x := range Observe(context.Background(), ob) {
-		recv <- fmt.Sprintf("%d-%d", id, x)
-		count++
-		if count > id {
-			return
-		}
-	}
+type WaitGroup struct {
+	sync.WaitGroup
+}
+
+func (w *WaitGroup) Go(x func()) {
+	w.Add(1)
+
+	go func() {
+		defer w.Done()
+
+		x()
+	}()
 }

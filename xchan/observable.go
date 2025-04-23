@@ -2,7 +2,9 @@ package xchan
 
 import "errors"
 
-type Observable[T any] interface {
+var Completed = errors.New("completed")
+
+type ValueObservable[T any] interface {
 	Value() <-chan T
 }
 
@@ -15,9 +17,33 @@ type Cancelable interface {
 }
 
 type Observer[T any] interface {
-	Observable[T]
+	ValueObservable[T]
 	Cancelable
 	Done() <-chan struct{}
+	Err() error
 }
 
-var Completed = errors.New("completed")
+type Observable[T any] interface {
+	Observe() Observer[T]
+}
+
+type NotifiableObserver[T any] interface {
+	ValueNotifier[T]
+	ValueObservable[T]
+	Cancelable
+	Done() <-chan struct{}
+	Err() error
+}
+
+type Subscriber[T any] interface {
+	ValueNotifier[T]
+	Cancelable
+	Done() <-chan struct{}
+	Err() error
+}
+
+type ObservableFunc[T any] func() Observer[T]
+
+func (fn ObservableFunc[T]) Observe() Observer[T] {
+	return fn()
+}

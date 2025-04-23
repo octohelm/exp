@@ -1,101 +1,107 @@
 package xchan
 
 import (
-	"iter"
 	"sync"
 	"sync/atomic"
 )
 
 type Subject[T any] struct {
-	observers sync.Map
-	closed    atomic.Bool
-	err       atomic.Value
+	mu          sync.Mutex
+	subscribers map[Subscriber[T]]struct{}
+	done        atomic.Value
+	err         error
 }
 
-func (s *Subject[T]) CancelCause(err error) {
-	if s.closed.Swap(true) {
-		return
+var _ Subscriber[int] = &Subject[int]{}
+
+func (c *Subject[T]) Err() error {
+	c.mu.Lock()
+	err := c.err
+	c.mu.Unlock()
+	return err
+}
+
+func (c *Subject[T]) Done() <-chan struct{} {
+	d := c.done.Load()
+	if d != nil {
+		return d.(chan struct{})
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	d = c.done.Load()
+	if d == nil {
+		d = make(chan struct{})
+		c.done.Store(d)
+	}
+	return d.(chan struct{})
+}
+
+func (c *Subject[T]) CancelCause(err error) {
+	c.mu.Lock()
+	if c.err != nil {
+		c.mu.Unlock()
+		return // already canceled
 	}
 
-	for o := range s.observer() {
+	if err == nil {
+		err = Completed
+	}
+
+	c.err = err
+
+	d, _ := c.done.Load().(chan struct{})
+	if d == nil {
+		c.done.Store(closedchan)
+	} else {
+		close(d)
+	}
+
+	for o := range c.subscribers {
 		o.CancelCause(err)
 	}
+	c.subscribers = nil
+	c.mu.Unlock()
 
 	return
 }
 
-func (s *Subject[T]) Send(value T) {
-	if s.closed.Load() {
-		return
+func (c *Subject[T]) Send(value T) {
+	c.mu.Lock()
+	if c.err != nil {
+		c.mu.Unlock()
+		return // already canceled
 	}
 
-	for o := range s.observer() {
-		if x, ok := o.(ValueNotifier[T]); ok {
-			x.Send(value)
-		}
+	for ob := range c.subscribers {
+		ob.Send(value)
 	}
+	c.mu.Unlock()
 }
 
-func (s *Subject[T]) observer() iter.Seq[Observer[T]] {
-	return func(yield func(Observer[T]) bool) {
-		for k := range s.observers.Range {
-			if !yield(k.(Observer[T])) {
-				return
-			}
-		}
-	}
+func (c *Subject[T]) Observe() Observer[T] {
+	o := NewNotifiableObserver[T]()
+	c.Subscribe(o)
+	return o
 }
 
-func (s *Subject[T]) Observe() Observer[T] {
-	o := &observer[T]{}
-	o.init()
+func (c *Subject[T]) Subscribe(o Subscriber[T]) {
+	c.mu.Lock()
+	if c.err != nil {
+		c.mu.Unlock()
+		return // already canceled
+	}
 
-	s.observers.Store(o, true)
+	if c.subscribers == nil {
+		c.subscribers = map[Subscriber[T]]struct{}{}
+	}
+	c.subscribers[o] = struct{}{}
+	c.mu.Unlock()
 
 	go func() {
 		<-o.Done()
 
-		s.observers.Delete(o)
+		c.mu.Lock()
+		delete(c.subscribers, o)
+		c.mu.Unlock()
 	}()
-
-	return o
-}
-
-type observer[T any] struct {
-	value chan T
-	done  chan struct{}
-
-	closed atomic.Bool
-	err    atomic.Value
-}
-
-func (c *observer[T]) init() {
-	c.value = make(chan T)
-	c.done = make(chan struct{})
-}
-
-func (c *observer[T]) Send(v T) {
-	select {
-	case <-c.done:
-	case c.value <- v:
-	}
-}
-
-func (c *observer[T]) Done() <-chan struct{} {
-	return c.done
-}
-
-func (c *observer[T]) Value() <-chan T {
-	return c.value
-}
-
-func (c *observer[T]) CancelCause(err error) {
-	if c.closed.Swap(true) {
-		return
-	}
-	if err == nil {
-		err = Completed
-	}
-	c.err.Store(err)
-	close(c.done)
 }

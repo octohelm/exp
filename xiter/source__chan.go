@@ -15,13 +15,13 @@ func Recv[T any](c <-chan T) iter.Seq[T] {
 	}
 }
 
-func RecvContext[T any](ctx context.Context, c <-chan T) iter.Seq[T] {
+func RecvContext[T any](ctx context.Context, value <-chan T) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case v, ok := <-c:
+			case v, ok := <-value:
 				if !ok || !yield(v) {
 					return
 				}
