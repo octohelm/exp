@@ -22,14 +22,11 @@ func Merge[T any](seqs ...iter.Seq[T]) iter.Seq[T] {
 		wg := &sync.WaitGroup{}
 
 		for _, seq := range seqs {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-
+			wg.Go(func() {
 				for v := range seq {
 					chValue <- v
 				}
-			}()
+			})
 		}
 
 		go func() {

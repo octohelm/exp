@@ -6,7 +6,8 @@ import (
 	"slices"
 	"testing"
 
-	testingx "github.com/octohelm/x/testing"
+	"github.com/octohelm/x/cmp"
+	. "github.com/octohelm/x/testing/v2"
 )
 
 func FuzzNotifiableObserver(f *testing.F) {
@@ -17,28 +18,38 @@ func FuzzNotifiableObserver(f *testing.F) {
 	f.Fuzz(func(t *testing.T, n int) {
 		x := NewNotifiableObserver[int]()
 
+		// 模拟多协程监听 Done 信号
 		for range 10 {
 			go func() {
 				<-x.Done()
 			}()
 		}
 
+		// 异步发送数据并在结束时取消
 		go func() {
 			for i := range n {
 				x.Send(i)
 			}
-
 			x.CancelCause(nil)
 		}()
 
+		// 消费数据
 		values := slices.Collect(Values(context.Background(), x))
 
-		testingx.Expect(t, len(values), testingx.Be(n))
+		Then(t, "收到的数据总量应与发送量一致",
+			Expect(len(values), Equal(n)),
+		)
 
-		_, doneChOk := <-x.Done()
-		testingx.Expect(t, false, testingx.Be(doneChOk))
+		Then(t, "当 Observer 取消后，通道应当关闭",
+			Expect(func() bool {
+				_, ok := <-x.Done()
+				return ok
+			}(), Be(cmp.Eq(false))),
 
-		_, valueChOk := <-x.Value()
-		testingx.Expect(t, false, testingx.Be(valueChOk))
+			Expect(func() bool {
+				_, ok := <-x.Value()
+				return ok
+			}(), Be(cmp.Eq(false))),
+		)
 	})
 }

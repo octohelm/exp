@@ -4,6 +4,10 @@ import "iter"
 
 func Take[T any](seq iter.Seq[T], n int) iter.Seq[T] {
 	return func(yield func(T) bool) {
+		if n <= 0 {
+			return
+		}
+
 		seq(func(v T) bool {
 			if !yield(v) {
 				return false

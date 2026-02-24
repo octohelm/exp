@@ -12,7 +12,7 @@ import (
 func TestThrottleTime(t *testing.T) {
 	t.Run("simple", func(t *testing.T) {
 		src := Seq(func(yield func(int) bool) {
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
 				if !yield(i) {
 					return
 				}
