@@ -1,7 +1,10 @@
 package xiter
 
-import "iter"
+import (
+	"iter"
+)
 
+// Take 只保留前 n 个元素。
 func Take[T any](seq iter.Seq[T], n int) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		if n <= 0 {

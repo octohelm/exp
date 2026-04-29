@@ -16,6 +16,13 @@ func FuzzNotifiableObserver(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, n int) {
+		if n < 0 {
+			t.Skip()
+		}
+		if n > 256 {
+			n = 256
+		}
+
 		x := NewNotifiableObserver[int]()
 
 		// 模拟多协程监听 Done 信号

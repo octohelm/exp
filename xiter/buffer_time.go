@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// BufferTime 按时间窗口收集元素，并按批次输出。
 func BufferTime[V any](seq iter.Seq[V], d time.Duration) iter.Seq[[]V] {
 	return func(yield func([]V) bool) {
 		buffer := make([]V, 0)

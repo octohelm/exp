@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// DebounceTime 在每个时间窗口内只输出最后一个元素。
 func DebounceTime[V any](seq iter.Seq[V], d time.Duration) iter.Seq[V] {
 	return func(yield func(V) bool) {
 		bufferedSeq := BufferTime(seq, d)

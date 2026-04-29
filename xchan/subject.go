@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 )
 
+// Subject 表示可向多个 subscriber 广播值的 observable。
 type Subject[T any] struct {
 	mu          sync.Mutex
 	subscribers map[Subscriber[T]]struct{}
@@ -14,6 +15,7 @@ type Subject[T any] struct {
 
 var _ Subscriber[int] = &Subject[int]{}
 
+// Err 返回 subject 的结束原因。
 func (c *Subject[T]) Err() error {
 	c.mu.Lock()
 	err := c.err
@@ -21,6 +23,7 @@ func (c *Subject[T]) Err() error {
 	return err
 }
 
+// Done 返回 subject 的结束信号通道。
 func (c *Subject[T]) Done() <-chan struct{} {
 	d := c.done.Load()
 	if d != nil {
@@ -36,6 +39,7 @@ func (c *Subject[T]) Done() <-chan struct{} {
 	return d.(chan struct{})
 }
 
+// CancelCause 结束 subject，并把结束原因传播给所有订阅者。
 func (c *Subject[T]) CancelCause(err error) {
 	c.mu.Lock()
 	if c.err != nil {
@@ -65,6 +69,7 @@ func (c *Subject[T]) CancelCause(err error) {
 	return
 }
 
+// Send 向所有当前订阅者广播一个值。
 func (c *Subject[T]) Send(value T) {
 	c.mu.Lock()
 	if c.err != nil {
@@ -78,12 +83,14 @@ func (c *Subject[T]) Send(value T) {
 	c.mu.Unlock()
 }
 
+// Observe 创建一个新的 observer 并订阅当前 subject。
 func (c *Subject[T]) Observe() Observer[T] {
 	o := NewNotifiableObserver[T]()
 	c.Subscribe(o)
 	return o
 }
 
+// Subscribe 注册一个 subscriber，并在其结束时自动移除。
 func (c *Subject[T]) Subscribe(o Subscriber[T]) {
 	c.mu.Lock()
 	if c.err != nil {

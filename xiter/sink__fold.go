@@ -1,7 +1,10 @@
 package xiter
 
-import "iter"
+import (
+	"iter"
+)
 
+// Fold 使用 reducer 把序列折叠为单个值。
 func Fold[T any](seq iter.Seq[T], reducer func(T, T) T) T {
 	var prev T
 	r := func(v1, v2 T) T { return v2 }

@@ -1,7 +1,9 @@
 package fp
 
+// Operator 表示接收 T 并返回 R 的单步变换。
 type Operator[T any, R any] func(in T) R
 
+// Pipe 依次执行一个操作并返回结果。
 func Pipe[T, R any](
 	in T,
 	op1 Operator[T, R],
@@ -9,6 +11,7 @@ func Pipe[T, R any](
 	return op1(in)
 }
 
+// Pipe2 依次执行两个操作并返回最终结果。
 func Pipe2[T, A, R any](
 	in T,
 	op1 Operator[T, A],
@@ -17,6 +20,7 @@ func Pipe2[T, A, R any](
 	return op2(op1(in))
 }
 
+// Pipe3 依次执行三个操作并返回最终结果。
 func Pipe3[T, A, B, R any](
 	in T,
 	op1 Operator[T, A],
@@ -26,6 +30,7 @@ func Pipe3[T, A, B, R any](
 	return op3(op2(op1(in)))
 }
 
+// Pipe4 依次执行四个操作并返回最终结果。
 func Pipe4[T, A, B, C, R any](
 	in T,
 	op1 Operator[T, A],
@@ -36,6 +41,7 @@ func Pipe4[T, A, B, C, R any](
 	return op4(op3(op2(op1(in))))
 }
 
+// Pipe5 依次执行五个操作并返回最终结果。
 func Pipe5[T, A, B, C, D, R any](
 	in T,
 	op1 Operator[T, A],
@@ -47,6 +53,7 @@ func Pipe5[T, A, B, C, D, R any](
 	return op5(op4(op3(op2(op1(in)))))
 }
 
+// Pipe6 依次执行六个操作并返回最终结果。
 func Pipe6[T, A, B, C, D, E, R any](
 	in T,
 	op1 Operator[T, A],
@@ -59,6 +66,7 @@ func Pipe6[T, A, B, C, D, E, R any](
 	return op6(op5(op4(op3(op2(op1(in))))))
 }
 
+// Pipe7 依次执行七个操作并返回最终结果。
 func Pipe7[T, A, B, C, D, E, F, R any](
 	in T,
 	op1 Operator[T, A],
@@ -72,6 +80,7 @@ func Pipe7[T, A, B, C, D, E, F, R any](
 	return op7(op6(op5(op4(op3(op2(op1(in)))))))
 }
 
+// Pipe8 依次执行八个操作并返回最终结果。
 func Pipe8[T, A, B, C, D, E, F, G, R any](
 	in T,
 	op1 Operator[T, A],
@@ -86,6 +95,7 @@ func Pipe8[T, A, B, C, D, E, F, G, R any](
 	return op8(op7(op6(op5(op4(op3(op2(op1(in))))))))
 }
 
+// Pipe9 依次执行九个操作并返回最终结果。
 func Pipe9[T, A, B, C, D, E, F, G, H, R any](
 	in T,
 	op1 Operator[T, A],

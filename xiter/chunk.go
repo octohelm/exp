@@ -4,6 +4,7 @@ import (
 	"iter"
 )
 
+// Chunk 按固定大小把序列拆成多个切片。
 func Chunk[V any](seq iter.Seq[V], n int) iter.Seq[[]V] {
 	if n < 1 {
 		panic("cannot be less than 1")

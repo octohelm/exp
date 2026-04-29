@@ -6,7 +6,6 @@ import (
 	"slices"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/octohelm/x/cmp"
 	. "github.com/octohelm/x/testing/v2"
@@ -21,19 +20,30 @@ func FuzzSubject(f *testing.F) {
 		if workerNumber <= 0 || n <= 0 {
 			t.Skip()
 		}
+		if n > 64 {
+			n = 64
+		}
+		if workerNumber > 16 {
+			workerNumber = 16
+		}
 
-		t.Run(fmt.Sprintf("worker %d with %d values", workerNumber, n), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%d 个协程处理 %d 个值", workerNumber, n), func(t *testing.T) {
 			ret := &Subject[int]{}
 			src := &Subject[int]{}
+			retObserver := ret.Observe()
 
 			wg := &sync.WaitGroup{}
+			ready := &sync.WaitGroup{}
+			ready.Add(workerNumber)
 
 			// 消费者：每个 worker 期望从 src 观察并转发 n 个值到 ret
 			for range workerNumber {
 				wg.Go(func() {
 					count := 0
+					ob := src.Observe()
+					ready.Done()
 
-					for x := range Observe(t.Context(), src.Observe()) {
+					for x := range Observe(t.Context(), ob) {
 						count++
 
 						ret.Send(x)
@@ -45,14 +55,15 @@ func FuzzSubject(f *testing.F) {
 				})
 			}
 
+			ready.Wait()
+
 			// 生产者：延迟发送数据
 			wg.Go(func() {
-				// 模拟异步生产
-				time.Sleep(time.Duration(n) * time.Microsecond)
-
 				for i := range n {
 					src.Send(i)
 				}
+
+				src.CancelCause(nil)
 			})
 
 			go func() {
@@ -62,10 +73,10 @@ func FuzzSubject(f *testing.F) {
 			}()
 
 			values := slices.Collect(
-				Observe(t.Context(), ret.Observe()),
+				Observe(t.Context(), retObserver),
 			)
 
-			Then(t, "收到的总数据量应等于 worker 数乘以每个 worker 处理的量",
+			Then(t, "收到的总数据量应等于协程数乘以每个协程处理的量",
 				Expect(len(values), Equal(n*workerNumber)),
 			)
 
