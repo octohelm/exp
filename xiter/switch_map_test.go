@@ -6,9 +6,10 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/octohelm/exp/xiter"
 	"github.com/octohelm/x/cmp"
 	. "github.com/octohelm/x/testing/v2"
+
+	"github.com/octohelm/exp/xiter"
 )
 
 func TestSwitchMap(t *testing.T) {

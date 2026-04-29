@@ -4,8 +4,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/octohelm/exp/xiter"
 	. "github.com/octohelm/x/testing/v2"
+
+	"github.com/octohelm/exp/xiter"
 )
 
 func TestMerge(t *testing.T) {
@@ -23,8 +24,11 @@ func TestMerge(t *testing.T) {
 	})
 
 	t.Run("合并流的原始顺序校验", func(t *testing.T) {
-		Then(t, "原始拼接顺序应符合预期",
-			Expect(slices.Collect(merged), Equal([]int{1, 3, 5, 0, 2, 4})),
+		values := slices.Collect(merged)
+		slices.Sort(values)
+
+		Then(t, "并发合并时应保证元素完整且不重复",
+			Expect(values, Equal([]int{0, 1, 2, 3, 4, 5})),
 		)
 	})
 }

@@ -1,7 +1,10 @@
 package xiter
 
-import "iter"
+import (
+	"iter"
+)
 
+// Skip 跳过前 n 个元素。
 func Skip[T any](seq iter.Seq[T], n int) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		seq(func(v T) bool {

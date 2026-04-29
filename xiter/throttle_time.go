@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// ThrottleTime 在时间窗口内最多输出一个元素。
 func ThrottleTime[V any](seq iter.Seq[V], d time.Duration) iter.Seq[V] {
 	return func(yield func(V) bool) {
 		timer := time.NewTimer(d)

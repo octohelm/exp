@@ -5,9 +5,10 @@ import (
 	"slices"
 	"testing"
 
+	. "github.com/octohelm/x/testing/v2"
+
 	. "github.com/octohelm/exp/fp"
 	"github.com/octohelm/exp/xiter"
-	. "github.com/octohelm/x/testing/v2"
 )
 
 func TestCompose(t *testing.T) {

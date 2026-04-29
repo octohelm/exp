@@ -5,6 +5,7 @@ import (
 	"sync"
 )
 
+// Merge 并发消费多个序列，并按到达顺序合并输出。
 func Merge[T any](seqs ...iter.Seq[T]) iter.Seq[T] {
 	if len(seqs) == 0 {
 		return func(yield func(T) bool) {
